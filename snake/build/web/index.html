@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            border: 2px solid #ccc;
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game-board" width="400" height="400"></canvas>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('game-board');
+            const ctx = canvas.getContext('2d');
+            const cellSize = 20;
+            const gridSize = 20;
+            let snake = [{ x: 2, y: 1 }, { x: 1, y: 1 }, { x: 0, y: 1 }];
+            let direction = 'right';
+            let food = generateFood();
+            let intervalId;
+
+            function generateFood() {
+                let food;
+                do {
+                    food = {
+                        x: Math.floor(Math.random() * gridSize),
+                        y: Math.floor(Math.random() * gridSize)
+                    };
+                } while (isCellOccupied(food, snake));
+
+                return food;
+            }
+
+            function isCellOccupied(cell, array) {
+                return array.some(part => part.x === cell.x && part.y === cell.y);
+            }
+
+            function draw() {
+                // Clear the canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw food
+                ctx.fillStyle = '#FF5733';
+                ctx.fillRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+
+                // Draw snake
+                ctx.fillStyle = '#4CAF50';
+                snake.forEach(part => {
+                    ctx.fillRect(part.x * cellSize, part.y * cellSize, cellSize, cellSize);
+                });
+            }
+
+            function move() {
+                const head = { ...snake[0] };
+
+                switch (direction) {
+                    case 'up':
+                        head.y = (head.y - 1 + gridSize) % gridSize;
+                        break;
+                    case 'right':
+                        head.x = (head.x + 1) % gridSize;
+                        break;
+                    case 'down':
+                        head.y = (head.y + 1) % gridSize;
+                        break;
+                    case 'left':
+                        head.x = (head.x - 1 + gridSize) % gridSize;
+                        break;
+                }
+
+                snake.unshift(head);
+
+                if (head.x === food.x && head.y === food.y) {
+                    food = generateFood();
+                } else {
+                    snake.pop();
+                }
+
+                if (isCellOccupied(head, snake.slice(1))) {
+//                    alert('Game Over!');
+//                    resetGame();
+                }
+
+                draw();
+            }
+
+            function resetGame() {
+                clearInterval(intervalId);
+                snake = [{ x: 2, y: 1 }, { x: 1, y: 1 }, { x: 0, y: 1 }];
+                direction = 'right';
+                food = generateFood();
+                draw();
+                intervalId = setInterval(move, 200);
+            }
+
+            function handleKeyDown(e) {
+                switch (e.key) {
+                    case 'ArrowUp':
+                        if (direction !== 'down') direction = 'up';
+                        break;
+                    case 'ArrowRight':
+                        if (direction !== 'left') direction = 'right';
+                        break;
+                    case 'ArrowDown':
+                        if (direction !== 'up') direction = 'down';
+                        break;
+                    case 'ArrowLeft':
+                        if (direction !== 'right') direction = 'left';
+                        break;
+                }
+            }
+
+            function handleTouchStart(e) {
+                const touch = e.touches[0];
+                const xDiff = touch.clientX - canvas.getBoundingClientRect().left;
+                const yDiff = touch.clientY - canvas.getBoundingClientRect().top;
+
+                const angle = Math.atan2(yDiff - canvas.height / 2, xDiff - canvas.width / 2);
+                const angleInDegrees = (angle * 180) / Math.PI;
+
+                if (angleInDegrees >= -45 && angleInDegrees < 45) {
+                    direction = 'right';
+                } else if (angleInDegrees >= 45 && angleInDegrees < 135) {
+                    direction = 'down';
+                } else if (angleInDegrees >= 135 || angleInDegrees < -135) {
+                    direction = 'left';
+                } else {
+                    direction = 'up';
+                }
+            }
+
+            document.addEventListener('keydown', handleKeyDown);
+            canvas.addEventListener('touchstart', handleTouchStart);
+
+            // Initialize the game
+            draw();
+            intervalId = setInterval(move, 200);
+        });
+    </script>
+</body>
+</html>
