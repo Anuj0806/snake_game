@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+        }
+
+        #player-names,
+        #tic-tac-toe,
+        #reset-button,
+        #back-button,
+        #scoreboard {
+            display: none;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        form, #back-button {
+            margin-top: 20px;
+        }
+
+        label {
+            margin-top: 10px;
+        }
+
+        input, select, button {
+            margin-top: 5px;
+        }
+
+        #tic-tac-toe {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 5px;
+            margin-top: 20px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            font-size: 24px;
+            text-align: center;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+
+        .message {
+            margin-top: 10px;
+        }
+
+        #reset-button, #back-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #scoreboard {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-setup">
+    <h2>Choose Game Mode</h2>
+    <form id="gameModeForm">
+        <label for="gameMode">Select Game Mode:</label>
+        <select id="gameMode" name="gameMode">
+            <option value="friend">Play with Friend</option>
+            <option value="computer">Play with Computer</option>
+        </select>
+        <button type="button" onclick="startGame()">Next</button>
+    </form>
+</div>
+
+<div id="player-names">
+    <h2>Enter Player Names</h2>
+    <form id="playerNamesForm">
+        <label for="player1">Player 1 Name:</label>
+        <input type="text" id="player1" name="player1" placeholder="Player 1" required>
+
+        <label for="player2">Player 2 Name:</label>
+        <input type="text" id="player2" name="player2" placeholder="Player 2" required>
+
+        <button type="button" onclick="startGame1()">Start Game</button>
+    </form>
+</div>
+
+<div id="tic-tac-toe"></div>
+<div class="message" id="message"></div>
+<button id="reset-button" onclick="resetGame()">Reset Game</button>
+<button id="back-button" onclick="goBack()">Back</button>
+<div id="scoreboard"></div>
+
+<script>
+    let gameMode;
+    let player1Name = '';
+    let player2Name = '';
+    let currentPlayer = 'X';
+    let boardState = ['', '', '', '', '', '', '', '', ''];
+    let gameActive = false;
+    let player1Score = 0;
+    let player2Score = 0;
+
+     function startGame() {
+        gameMode = document.getElementById('gameMode').value;
+
+        if (gameMode === 'friend') {
+            document.getElementById('player-names').style.display = 'block';
+            document.getElementById('tic-tac-toe').style.display = 'none';
+            document.getElementById('reset-button').style.display = 'none';
+            document.getElementById('back-button').style.display = 'none';
+        } else {
+            document.getElementById('player-names').style.display = 'none';
+            document.getElementById('tic-tac-toe').style.display = 'grid';
+            document.getElementById('reset-button').style.display = 'inline-block';
+            document.getElementById('back-button').style.display = 'inline-block';
+
+            player1Name = document.getElementById('player1').value;
+            player2Name = document.getElementById('player2').value;
+            resetGame();
+        }
+    }
+    function startGame1() {
+           document.getElementById('player-names').style.display = 'none';
+            document.getElementById('tic-tac-toe').style.display = 'grid';
+            document.getElementById('reset-button').style.display = 'inline-block';
+            document.getElementById('back-button').style.display = 'inline-block';
+
+            player1Name = document.getElementById('player1').value;
+            player2Name = document.getElementById('player2').value;
+            resetGame();
+    }
+
+    function handleCellClick(index) {
+        if (gameActive && boardState[index] === '') {
+            boardState[index] = currentPlayer;
+            renderBoard();
+
+            const winner = checkWinner();
+            if (winner) {
+                document.getElementById('message').textContent = `${getPlayerName(winner)} wins!`;
+                updateScores(winner);
+                gameActive = false;
+            } else if (checkDraw()) {
+                document.getElementById('message').textContent = 'It\'s a draw!';
+                gameActive = false;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                document.getElementById('message').textContent = `${getPlayerName(currentPlayer)}'s turn`;
+
+                if (gameMode === 'computer' && currentPlayer === 'O') {
+                    makeComputerMove();
+                }
+            }
+        }
+    }
+
+    function makeComputerMove() {
+        const emptyCells = boardState.reduce((acc, cell, index) => {
+            if (cell === '') {
+                acc.push(index);
+            }
+            return acc;
+        }, []);
+
+        if (emptyCells.length > 0) {
+            const randomIndex = Math.floor(Math.random() * emptyCells.length);
+            handleCellClick(emptyCells[randomIndex]);
+        }
+    }
+
+    function checkWinner() {
+        const winPatterns = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6] // Diagonals
+        ];
+
+        for (const pattern of winPatterns) {
+            const [a, b, c] = pattern;
+            if (boardState[a] !== '' && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+                return boardState[a];
+            }
+        }
+
+        return null;
+    }
+
+    function checkDraw() {
+        return !boardState.includes('');
+    }
+
+    function getPlayerName(player) {
+        return player === 'X' ? player1Name : player2Name;
+    }
+
+    function updateScores(winner) {
+        if (winner === 'X') {
+            player1Score++;
+        } else {
+            player2Score++;
+        }
+
+        renderScoreboard();
+    }
+
+    function renderBoard() {
+        const board = document.getElementById('tic-tac-toe');
+        board.innerHTML = '';
+        boardState.forEach((value, index) => {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.textContent = value;
+            cell.addEventListener('click', () => handleCellClick(index));
+            board.appendChild(cell);
+        });
+    }
+
+    function renderScoreboard() {
+        const scoreboardElement = document.getElementById('scoreboard');
+        scoreboardElement.innerHTML = `${player1Name}: ${player1Score} | ${player2Name}: ${player2Score}`;
+    }
+
+    function resetGame() {
+        currentPlayer = 'X';
+        boardState = ['', '', '', '', '', '', '', '', ''];
+        gameActive = true;
+        document.getElementById('message').textContent = `${getPlayerName(currentPlayer)}'s turn`;
+        renderBoard();
+        renderScoreboard();
+    }
+
+    function resetButtonClick() {
+        resetGame();
+        if (gameMode === 'computer' && currentPlayer === 'O') {
+            makeComputerMove();
+        }
+    }
+
+    function goBack() {
+        document.getElementById('game-setup').style.display = 'block';
+        document.getElementById('player-names').style.display = 'block';
+        document.getElementById('tic-tac-toe').style.display = 'none';
+        document.getElementById('reset-button').style.display = 'none';
+        document.getElementById('back-button').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
